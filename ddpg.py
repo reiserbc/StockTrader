@@ -92,10 +92,17 @@ class AgentDDPG:
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
     
     def add_noise_to_weights(self, amount=0.1):
-        self.actor.apply(lambda x: _add_noise_to_weights(x, amount))
-        self.critic.apply(lambda x: _add_noise_to_weights(x, amount))
-        self.actor_target.apply(lambda x: _add_noise_to_weights(x, amount))
-        self.critic_target.apply(lambda x: _add_noise_to_weights(x, amount))
+        if self.use_cuda:
+            self.actor.apply(lambda x: _add_noise_to_weights(x.cuda(), amount))
+            self.critic.apply(lambda x: _add_noise_to_weights(x, amount))
+            self.actor_target.apply(lambda x: _add_noise_to_weights(x, amount))
+            self.critic_target.apply(lambda x: _add_noise_to_weights(x, amount))
+
+        else:
+            self.actor.apply(lambda x: _add_noise_to_weights(x, amount))
+            self.critic.apply(lambda x: _add_noise_to_weights(x, amount))
+            self.actor_target.apply(lambda x: _add_noise_to_weights(x, amount))
+            self.critic_target.apply(lambda x: _add_noise_to_weights(x, amount))
 
 class ReplayBuffer:
     """
