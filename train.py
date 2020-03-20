@@ -18,7 +18,7 @@ def main():
     agent.set_noise_process(noise_process)
 
     trainer = ReinforcementTrainer(env, agent)
-    trainer.train(episodes=200, timesteps=100, batch_size=64, log=True)
+    trainer.train(episodes=500, timesteps=100, batch_size=64, log=True, save_path='.')
 
 class ReinforcementTrainer:
     def __init__(self, gym, agent):
