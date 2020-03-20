@@ -1,3 +1,4 @@
+import pdb
 import torch
 import gym
 import numpy as np
@@ -13,12 +14,12 @@ def main():
     print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
     print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
     # Initialize networks
-    agent = AgentDDPG(24, 4, use_cuda=False)
+    agent = AgentDDPG(24, 4, use_cuda=True)
     noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
     agent.set_noise_process(noise_process)
 
     trainer = ReinforcementTrainer(env, agent)
-    trainer.train(episodes=500, timesteps=100, batch_size=64, log=True, save_path='.')
+    trainer.train(episodes=500, timesteps=100, batch_size=32, log=True, save_path='.')
     f1 = lambda a: a.add_noise_to_weights(0.3)
     f2 = lambda a: a.add_noise_to_weights(0.1)
     trainer.train(episodes=500, timesteps=100, batch_size=64, mut_alg_episode=f1, mut_alg_step=f2, log=True, save_path='.')
@@ -53,6 +54,7 @@ class ReinforcementTrainer:
                 self.agent.save_experience(state, action, reward, new_state)
 
                 if len(self.agent.replay_buffer) > batch_size:
+#                    pdb.set_trace()
                     self.agent.update(batch_size) 
         
                 state = new_state

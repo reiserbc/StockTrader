@@ -64,7 +64,12 @@ class AgentDDPG:
     def update(self, batch_size):
         samples = self.replay_buffer.get_samples(batch_size)
         states, actions, rewards, next_states = unpack_replay_buffer(samples)
-
+	
+        if self.use_cuda:
+            states = states.cuda()
+            actions = actions.cuda()
+            rewards = rewards.cuda()
+            next_states = next_states.cuda()
         # Critic loss        
         Qvals = self.critic.forward(states, actions)
         next_actions = self.actor_target.forward(next_states)
@@ -125,10 +130,22 @@ def unpack_replay_buffer(experiences):
 
     states, actions, rewards, new_states = [], [], [], []
     for s, a, r, ns in experiences:
-        states.append(torch.Tensor(s))
-        actions.append(torch.Tensor(a))
-        rewards.append(torch.Tensor([float_reward(r)]))
-        new_states.append(torch.Tensor(ns))
+        x = [s, a, r, ns]
+        for i, el in enumerate(x):
+            if type(el) != torch.Tensor:
+                if type(el) == float or type(el) == int:
+                    el = [float_reward(el)] # put inside brackets for torch.Tensor() init
+                x[i] = torch.Tensor(el)
+            
+            if x[i].is_cuda:
+                x[i].cpu()
+            
+
+        s, a, r, ns = x[0], x[1], x[2], x[3]
+        states.append(s)
+        actions.append(a)
+        rewards.append(r)
+        new_states.append(ns)
 
     # stack list of tensors into one big tensors with <batch_size, x> dimensions
     s_t, a_t, r_t, ns_t = torch.stack(states), torch.stack(actions), torch.stack(rewards), torch.stack(new_states)
