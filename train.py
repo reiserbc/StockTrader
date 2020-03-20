@@ -2,7 +2,7 @@ import torch
 import gym
 import numpy as np
 from matplotlib import pyplot as plt
-from ddpg import AgentDDPG, add_noise_to_weights
+from ddpg import AgentDDPG
 from noise import OrnsteinUhlenbeckProcess
 
 # Initialize OpenAI Gym environment
