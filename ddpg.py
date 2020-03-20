@@ -9,10 +9,11 @@ from noise import OrnsteinUhlenbeckProcess
 
 class AgentDDPG:
     """Deep Deterministic Policy Gradient implementation for continuous action space reinforcement learning tasks"""
-    def __init__(self, state_size, action_size, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2):
+    def __init__(self, state_size, action_size, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2, use_cuda=False):
         # Params
         self.state_size, self.action_size = state_size, action_size
         self.gamma, self.tau = gamma, tau
+        self.use_cuda = use_cuda
 
         # Networks
         self.actor = Actor(state_size, action_size)
@@ -24,6 +25,12 @@ class AgentDDPG:
         copy_params(self.actor, self.actor_target)
         copy_params(self.critic, self.critic_target)
 
+        if self.use_cuda:
+            self.actor.cuda()
+            self.actor_target.cuda()
+            self.critic.cuda()
+            self.critic_target.cuda()
+
         # Create replay buffer for storing experience
         self.replay_buffer = ReplayBuffer(cache_size=int(1e6))
 
@@ -31,6 +38,7 @@ class AgentDDPG:
         self.critic_criterion  = nn.MSELoss()
         self.actor_optimizer  = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_learning_rate)
+
 
     def set_noise_process(self, noise_process):
         self.noise_process = noise_process

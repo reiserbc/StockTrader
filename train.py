@@ -13,7 +13,7 @@ print("Env action space: {}. Env observation space: {}".format(env.action_space,
 print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
 print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
 # Initialize networks
-agent = AgentDDPG(24, 4)
+agent = AgentDDPG(24, 4, use_cuda=True)
 noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
 agent.set_noise_process(noise_process)
 # Training params
@@ -21,14 +21,14 @@ batch_size = 64
 rewards = []
 avg_rewards = []
 
-for episode in range(500):
+for episode in range(1000):
     state = env.reset()
     # reset noice_process episodically
     agent.noise_process.reset_states()
     
     episode_reward = 0
     for t in range(400):
-        #env.render()
+        env.render()
         action = agent.get_action(state, noise=True)
         new_state, reward, done, info = env.step(action)
         agent.save_experience(state, action, reward, new_state)
