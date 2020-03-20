@@ -63,9 +63,9 @@ class ReinforcementTrainer:
 
             rewards.append(episode_reward)
             
-	    if log:
-		print("Episode {} | Reward {}".format(e, episode_reward))
-		
+            if log:
+                print("Episode {} | Reward {}".format(e, episode_reward))
+
         if plot:
             plt.plot(rewards)
             plt.xlabel('Episode')
