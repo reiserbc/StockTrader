@@ -56,7 +56,7 @@ class ReinforcementTrainer:
                     self.gym.render()
 
                 action = self.agent.get_action(state, noise=True)
-                new_state, reward, done, info = self.gym.step(action)
+                new_state, reward, done, info = self.gym.step(action.cpu())
                 print(type(state), type(action), type(reward), type(new_state))
                 self.agent.save_experience(state, action, reward, new_state)
 

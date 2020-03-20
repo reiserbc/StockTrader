@@ -46,10 +46,14 @@ class AgentDDPG:
     def get_action(self, state: np.ndarray, noise=True):
         """Select action with respect to state according to current policy and exploration noise"""
         state = FloatTensor(state)
+        if self.use_cuda:
+            state = state.cuda()
         a = self.actor.forward(state).detach()
         if noise:
             try:
                 n = FloatTensor(self.noise_process.sample())
+                if self.use_cuda:
+                    n = n.cuda()
                 return a + n
             except NameError as e:
                 print("Please set a noice process with self.set_noise_process(noise_process)")
