@@ -22,7 +22,7 @@ rewards = []
 avg_rewards = []
 
 for episode in range(1000):
-    state = env.reset().cuda()
+    state = env.reset()
     # reset noice_process episodically
     agent.noise_process.reset_states()
     

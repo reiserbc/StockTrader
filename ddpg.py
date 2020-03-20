@@ -45,6 +45,8 @@ class AgentDDPG:
     def get_action(self, state, noise=True):
         """Select action with respect to state according to current policy and exploration noise"""
         state = FloatTensor(state)
+        if self.use_cuda:
+            state = state.cuda()
         a = self.actor.forward(state).detach()
         if noise:
             try:
