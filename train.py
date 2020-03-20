@@ -28,7 +28,7 @@ for episode in range(500):
     
     episode_reward = 0
     for t in range(400):
-        env.render()
+#        env.render()
         action = agent.get_action(state, noise=True)
         new_state, reward, done, info = env.step(action)
         agent.save_experience(state, action, reward, new_state)
