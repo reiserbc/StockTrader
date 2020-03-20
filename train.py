@@ -30,6 +30,13 @@ def simulate(model_file):
     trainer = ReinforcementTrainer(env, agent)
     trainer.simulate(5, 250, model_file, render_env=True)
 
+def float_reward(reward) -> float:
+    # try to put reward into a float
+    if type(reward) == torch.Tensor:
+        return float(reward.item())
+    elif type(reward) != float:
+        return float(reward)
+
 class ReinforcementTrainer:
     def __init__(self, gym, agent):
         self.gym = gym
@@ -57,8 +64,7 @@ class ReinforcementTrainer:
 
                 action = self.agent.get_action(state, noise=True)
                 new_state, reward, done, info = self.gym.step(action.cpu())
-                print(type(state), type(action), type(reward), type(new_state))
-                self.agent.save_experience(state, action, reward, new_state)
+                self.agent.save_experience(state, action, float_reward(reward), new_state)
 
                 if len(self.agent.replay_buffer) > batch_size:
                     self.agent.update(batch_size) 

@@ -124,25 +124,19 @@ class ReplayBuffer:
     def __len__(self):
         return len(self.buffer)
 
-def unpack_replay_buffer(experiences):
+def unpack_replay_buffer(experiences, using_cuda=False):
     # Unpack list of tuple experiences into Tensors with 
     # dimensions (len(experiences), x), where x varies in states, actions, etc.
     batch_size = len(experiences)
 
     states, actions, rewards, new_states = [], [], [], []
     for s, a, r, ns in experiences:
-        x = [s, a, r, ns]
-        for i, el in enumerate(x):
-            if type(el) != torch.Tensor:
-                if type(el) == float or type(el) == int:
-                    el = [float_reward(el)] # put inside brackets for torch.Tensor() init
-                x[i] = torch.Tensor(el)
-            
-            if x[i].is_cuda:
-                x[i].cpu()
-            
+        if using_cuda:
+            s = torch.Tensor(s).cuda()
+            a = torch.Tensor(a).cuda() #TODO see if this line slows down the program
+            r = torch.Tensor(r).cuda()
+            ns = torch.Tensor(ns).cuda()
 
-        s, a, r, ns = x[0], x[1], x[2], x[3]
         states.append(s)
         actions.append(a)
         rewards.append(r)
@@ -151,13 +145,6 @@ def unpack_replay_buffer(experiences):
     # stack list of tensors into one big tensors with <batch_size, x> dimensions
     s_t, a_t, r_t, ns_t = torch.stack(states), torch.stack(actions), torch.stack(rewards), torch.stack(new_states)
     return s_t, a_t, r_t, ns_t
-
-def float_reward(reward) -> float:
-    # try to put reward into a float
-    if type(reward) == torch.Tensor:
-        return float(reward.item())
-    elif type(reward) != float:
-        return float(reward)
 
 def _add_noise_to_weights(m, amount=0.1, use_cuda=False):
     """call model.apply(add_noise_to_weights) to apply noise to a models weights """
