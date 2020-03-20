@@ -91,6 +91,12 @@ class AgentDDPG:
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
     
+    def add_noise_to_weights(self, amount=0.1):
+        self.actor.apply(lambda x: _add_noise_to_weights(x, amount))
+        self.critic.apply(lambda x: _add_noise_to_weights(x, amount))
+        self.actor_target.apply(lambda x: _add_noise_to_weights(x, amount))
+        self.critic_target.apply(lambda x: _add_noise_to_weights(x, amount))
+
 class ReplayBuffer:
     """
     Replay Buffer containing cache of interactions with the environment according to training Policy.
@@ -135,8 +141,9 @@ def float_reward(reward) -> float:
     elif type(reward) != float:
         return float(reward)
 
-def add_noise_to_weights(m, amount=0.1):
+def _add_noise_to_weights(m, amount=0.1):
     """call model.apply(add_noise_to_weights) to apply noise to a models weights """
     with torch.no_grad():
         if hasattr(m, 'weight'):
             m.weight.add_(torch.randn(m.weight.size()) * amount)
+            

@@ -44,14 +44,9 @@ for episode in range(1000):
             break
         
         if t % 15 == 0:
-            with torch.no_grad():
-                agent.actor.apply(lambda x: add_noise_to_weights(x, amount=0.3))
-                agent.critic.apply(lambda x: add_noise_to_weights(x, amount=0.3))
-    
-    with torch.no_grad():
-        agent.actor.apply(lambda x: add_noise_to_weights(x, amount=0.7))
-        agent.critic.apply(lambda x: add_noise_to_weights(x, amount=0.7))
+            agent.add_noise_to_weights(0.1)
 
+    agent.add_noise_to_weights(0.4)
     
     rewards.append(episode_reward)
 
