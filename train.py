@@ -13,7 +13,7 @@ print("Env action space: {}. Env observation space: {}".format(env.action_space,
 print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
 print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
 # Initialize networks
-agent = AgentDDPG(24, 4, use_cuda=False)
+agent = AgentDDPG(24, 4, use_cuda=True)
 noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
 agent.set_noise_process(noise_process)
 # Training params
@@ -28,7 +28,7 @@ for episode in range(1000):
     
     episode_reward = 0
     for t in range(400):
-#        env.render()
+        #env.render()
         action = agent.get_action(state, noise=True)
         new_state, reward, done, info = env.step(action)
         agent.save_experience(state, action, reward, new_state)
@@ -40,7 +40,7 @@ for episode in range(1000):
         episode_reward += reward
 
         if done:
-            print("episode: {}, reward: {}, average _reward: {} \n".format(episode, np.round(episode_reward, decimals=2), np.mean(rewards[-10:])))
+            print("episode: {}, reward: {}, average_reward: {} \n".format(episode, np.round(episode_reward, decimals=2), np.mean(rewards[-10:])))
             break
         
         if t % 15 == 0:
@@ -55,10 +55,10 @@ for episode in range(1000):
     
     rewards.append(episode_reward)
 
-    plt.plot(rewards)
-    plt.xlabel('Episode')
-    plt.ylabel('Reward')
-    plt.draw()
-    plt.pause(0.1)
+    # plt.plot(rewards)
+    # plt.xlabel('Episode')
+    # plt.ylabel('Reward')
+    # plt.draw()
+    # plt.pause(0.1)
 
 
