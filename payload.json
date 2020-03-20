@@ -1,0 +1,27 @@
+{
+  "container": {
+    "image": "ubuntu",
+    "cmd": [
+      "tail"
+    ],
+    "args": [
+      "-f",
+      "/dev/null"
+    ],
+    "env": {
+      "VARNAME": "varVal"
+    }
+  },
+  "resources": {
+    "cpu": 10000,
+    "memory": 10000,
+    "storage": 3000,
+    "devices": [
+      {
+        "name": "nvidia/gpu",
+        "memory": "16GB",
+        "count": 3
+      }
+    ]
+  }
+}
