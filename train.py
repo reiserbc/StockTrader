@@ -76,5 +76,38 @@ class ReinforcementTrainer:
         if save_path:
             torch.save(self.agent, 'ddpg.pkl')
 
+    def simulate(self, episodes, timesteps, load_path=None, render_env=False, plot=False, log=False):
+        agent = torch.load(load_path) if load_path else self.agent
+
+        rewards = []
+        avg_rewards = []
+    
+        for e in range(episodes):
+            state = self.gym.reset()
+            agent.noise_process.reset()
+            episode_reward = 0
+
+            for t in range(timesteps):
+                if render_env:
+                    self.gym.render()
+
+                action = agent.get_action(state, noise=True)
+                new_state, reward, done, info = self.gym.step(action.cpu())
+
+                state = new_state
+                episode_reward += reward
+	
+            rewards.append(episode_reward)
+            
+            if log:
+                print("Episode {} | Reward {}".format(e, episode_reward))
+
+        if plot:
+            plt.plot(rewards)
+            plt.xlabel('Episode')
+            plt.ylabel('Reward')
+            plt.draw()
+            plt.pause(0.1)
+
 if __name__ == '__main__':
 	main()        
