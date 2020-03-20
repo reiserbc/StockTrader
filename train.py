@@ -121,5 +121,5 @@ class ReinforcementTrainer:
             plt.pause(0.1)
 
 if __name__ == '__main__':
-	#main() 
-    simulate('ddpg.pkl')       
+    main() 
+#    simulate('ddpg.pkl')       
