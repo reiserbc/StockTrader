@@ -93,7 +93,7 @@ class AgentDDPG:
     
     def add_noise_to_weights(self, amount=0.1):
         if self.use_cuda:
-            self.actor.apply(lambda x: _add_noise_to_weights(x.cuda(), amount))
+            self.actor.apply(lambda x: _add_noise_to_weights(x, amount))
             self.critic.apply(lambda x: _add_noise_to_weights(x, amount))
             self.actor_target.apply(lambda x: _add_noise_to_weights(x, amount))
             self.critic_target.apply(lambda x: _add_noise_to_weights(x, amount))
@@ -148,9 +148,12 @@ def float_reward(reward) -> float:
     elif type(reward) != float:
         return float(reward)
 
-def _add_noise_to_weights(m, amount=0.1):
+def _add_noise_to_weights(m, amount=0.1, use_cuda=False):
     """call model.apply(add_noise_to_weights) to apply noise to a models weights """
     with torch.no_grad():
         if hasattr(m, 'weight'):
-            m.weight.add_(torch.randn(m.weight.size()) * amount)
+            if use_cuda:
+                m.weight.add_(torch.randn(m.weight.size()).cuda() * amount)
+            else:
+                m.weight.add_(torch.randn(m.weight.size()) * amount)
             
