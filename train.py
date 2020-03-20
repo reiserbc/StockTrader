@@ -19,6 +19,9 @@ def main():
 
     trainer = ReinforcementTrainer(env, agent)
     trainer.train(episodes=500, timesteps=100, batch_size=64, log=True, save_path='.')
+    f1 = lambda a: a.add_noise_to_weights(0.3)
+    f2 = lambda a: a.add_noise_to_weights(0.1)
+    trainer.train(episodes=500, timesteps=100, batch_size=64, mut_alg_episode=f1, mut_alg_step=f2, log=True, save_path='.')
 
 class ReinforcementTrainer:
     def __init__(self, gym, agent):

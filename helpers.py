@@ -8,7 +8,6 @@ def copy_params(from_net, to_net):
     for target_param, param in zip(to_net.parameters(), from_net.parameters()):
         target_param.data.copy_(param.data)
 
-
 def normalize_ochlv(df, max_price, max_vol):
     # Return a 0-1 normalized df
     df = df.copy()
