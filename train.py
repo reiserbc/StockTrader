@@ -18,7 +18,7 @@ def main():
     agent.set_noise_process(noise_process)
 
     trainer = ReinforcementTrainer(env, agent)
-    trainer.train(episodes=200, timesteps=100, batch_size=64, render_env=True, plot=True)
+    trainer.train(episodes=200, timesteps=100, batch_size=64, render_env=False, plot=False)
 
 class ReinforcementTrainer:
     def __init__(self, gym, agent):
@@ -26,7 +26,7 @@ class ReinforcementTrainer:
         self.agent = agent
 
     def train(self, episodes, timesteps, batch_size, save_path=None, mut_alg_episode=None, 
-                                        mut_alg_step=None, render_env=False, plot=False):
+                                        mut_alg_step=None, render_env=False, plot=False, log=False):
         """
         Trains agent within gym environment, taking timestep steps for each episode.
         Learning happens with batch_size experiences from ReplayBuffer
@@ -54,7 +54,7 @@ class ReinforcementTrainer:
         
                 state = new_state
                 episode_reward += reward
-                
+		
                 if mut_alg_step:
                     mut_alg_step(self.agent)
                     
@@ -62,7 +62,10 @@ class ReinforcementTrainer:
                 mut_alg_episode(self.agent)
 
             rewards.append(episode_reward)
-        
+            
+	    if log:
+		print("Episode {} | Reward {}".format(e, episode_reward))
+		
         if plot:
             plt.plot(rewards)
             plt.xlabel('Episode')
@@ -72,4 +75,6 @@ class ReinforcementTrainer:
 
         if save_path:
             torch.save(self.agent, 'ddpg.pkl')
-        
+
+if __name__ == '__main__':
+	main()        
