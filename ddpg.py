@@ -38,13 +38,6 @@ class AgentDDPG:
         self.critic_criterion  = nn.MSELoss()
         self.actor_optimizer  = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_learning_rate)
-        
-        if self.use_cuda:
-            self.actor.cuda()
-            self.actor_target.cuda()
-            self.critic.cuda()
-            self.critic_target.cuda()
-
 
     def set_noise_process(self, noise_process):
         self.noise_process = noise_process
