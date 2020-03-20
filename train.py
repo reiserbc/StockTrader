@@ -30,7 +30,7 @@ for episode in range(1000):
     for t in range(400):
         #env.render()
         action = agent.get_action(state, noise=True)
-        new_state, reward, done, info = env.step(action)
+        new_state, reward, done, info = env.step(action.cpu())
         agent.save_experience(state, action, reward, new_state)
         
         if len(agent.replay_buffer) > batch_size:
