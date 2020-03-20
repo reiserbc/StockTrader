@@ -5,55 +5,71 @@ from matplotlib import pyplot as plt
 from ddpg import AgentDDPG
 from noise import OrnsteinUhlenbeckProcess
 
-# Initialize OpenAI Gym environment
-env = gym.make('BipedalWalker-v3')
-env.reset()
+def main():
+    # Initialize OpenAI Gym environment
+    env = gym.make('BipedalWalker-v3')
 
-print("Env action space: {}. Env observation space: {}".format(env.action_space, env.observation_space))
-print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
-print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
-# Initialize networks
-agent = AgentDDPG(24, 4, use_cuda=True)
-noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
-agent.set_noise_process(noise_process)
-# Training params
-batch_size = 64
-rewards = []
-avg_rewards = []
+    print("Env action space: {}. Env observation space: {}".format(env.action_space, env.observation_space))
+    print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
+    print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
+    # Initialize networks
+    agent = AgentDDPG(24, 4, use_cuda=False)
+    noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
+    agent.set_noise_process(noise_process)
 
-for episode in range(1000):
-    state = env.reset()
-    # reset noice_process episodically
-    agent.noise_process.reset_states()
+    trainer = ReinforcementTrainer(env, agent)
+    trainer.train(episodes=200, timesteps=100, batch_size=64, render_env=True, plot=True)
+
+class ReinforcementTrainer:
+    def __init__(self, gym, agent):
+        self.gym = gym
+        self.agent = agent
+
+    def train(self, episodes, timesteps, batch_size, save_path=None, mut_alg_episode=None, 
+                                        mut_alg_step=None, render_env=False, plot=False):
+        """
+        Trains agent within gym environment, taking timestep steps for each episode.
+        Learning happens with batch_size experiences from ReplayBuffer
+        mut_alg_episode is applied to the agent model every episode
+        mut_alg_step is applied to the agent model every step
+        """
+        rewards = []
+        avg_rewards = []
     
-    episode_reward = 0
-    for t in range(400):
-        #env.render()
-        action = agent.get_action(state, noise=True)
-        new_state, reward, done, info = env.step(action.cpu())
-        agent.save_experience(state, action, reward, new_state)
+        for e in range(episodes):
+            state = self.gym.reset()
+            self.agent.noise_process.reset()
+            episode_reward = 0
+
+            for t in range(timesteps):
+                if render_env:
+                    self.gym.render()
+
+                action = self.agent.get_action(state, noise=True)
+                new_state, reward, done, info = self.gym.step(action.cpu())
+                self.agent.save_experience(state, action, reward, new_state)
+
+                if len(self.agent.replay_buffer) > batch_size:
+                    self.agent.update(batch_size) 
         
-        if len(agent.replay_buffer) > batch_size:
-            agent.update(batch_size) 
+                state = new_state
+                episode_reward += reward
+                
+                if mut_alg_step:
+                    mut_alg_step(self.agent)
+                    
+            if mut_alg_episode:
+                mut_alg_episode(self.agent)
+
+            rewards.append(episode_reward)
         
-        state = new_state
-        episode_reward += reward
+        if plot:
+            plt.plot(rewards)
+            plt.xlabel('Episode')
+            plt.ylabel('Reward')
+            plt.draw()
+            plt.pause(0.1)
 
-        if done:
-            print("episode: {}, reward: {}, average_reward: {} \n".format(episode, np.round(episode_reward, decimals=2), np.mean(rewards[-10:])))
-            break
+        if save_path:
+            torch.save(self.agent, 'ddpg.pkl')
         
-        if t % 15 == 0:
-            agent.add_noise_to_weights(0.1)
-
-    agent.add_noise_to_weights(0.4)
-    
-    rewards.append(episode_reward)
-
-    # plt.plot(rewards)
-    # plt.xlabel('Episode')
-    # plt.ylabel('Reward')
-    # plt.draw()
-    # plt.pause(0.1)
-
-
