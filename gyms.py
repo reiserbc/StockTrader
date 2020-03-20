@@ -34,7 +34,7 @@ class StockTraderEnv(gym.Env):
         # Actions of format Buy x%, Sell x%, Hold x% (NOTE: Hold % is irrelevant)
         self.action_space = spaces.Box(low=np.array([0, 0]), high=np.array([3,1], dtype=np.float32))
         # Observations of normalized OCHLV values for the last LOOKBACK_PERIOD periods
-        self.observation_space = spaces.Box(low=0, high=1, shape=(LOOKBACK_PERIOD + 1, 5), dtype=np.float32)
+        self.observation_space = spaces.Box(low=0, high=1, shape=(LOOKBACK_PERIOD, 5 + 1), dtype=np.float32)
         self.state = self._new_state()
 
     def step(self, action):
