@@ -51,6 +51,8 @@ class AgentDDPG:
         if noise:
             try:
                 n = FloatTensor(self.noise_process.sample())
+                if self.use_cuda:
+                    n = n.cuda()
                 return a + n
             except NameError as e:
                 print("Please set a noice process with self.set_noise_process(noise_process)")
