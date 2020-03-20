@@ -1,15 +1,16 @@
 import random
 from collections import deque
 import torch
+import typing
 from torch import nn, optim, FloatTensor
-import numpy as numpy
+import numpy as np
 from models import Actor, Critic
 from helpers import copy_params
 from noise import OrnsteinUhlenbeckProcess
 
 class AgentDDPG:
     """Deep Deterministic Policy Gradient implementation for continuous action space reinforcement learning tasks"""
-    def __init__(self, state_size, action_size, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2, use_cuda=False):
+    def __init__(self, state_size: int, action_size: int, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2, use_cuda=False):
         # Params
         self.state_size, self.action_size = state_size, action_size
         self.gamma, self.tau = gamma, tau
@@ -42,7 +43,7 @@ class AgentDDPG:
     def set_noise_process(self, noise_process):
         self.noise_process = noise_process
 
-    def get_action(self, state, noise=True):
+    def get_action(self, state: np.ndarray, noise=True):
         """Select action with respect to state according to current policy and exploration noise"""
         state = FloatTensor(state)
         if self.use_cuda:
@@ -58,10 +59,10 @@ class AgentDDPG:
                 print("Please set a noice process with self.set_noise_process(noise_process)")
         return a
 
-    def save_experience(self, state_t, action_t, reward_t, state_t1):
+    def save_experience(self, state_t: np.ndarray, action_t: any, reward_t: float, state_t1: np.ndarray):
         self.replay_buffer.add_sample(state_t, action_t, reward_t, state_t1)
 
-    def update(self, batch_size):
+    def update(self, batch_size: int):
         samples = self.replay_buffer.get_samples(batch_size)
         states, actions, rewards, next_states = unpack_replay_buffer(samples)
 	
