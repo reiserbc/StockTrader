@@ -136,7 +136,12 @@ def unpack_replay_buffer(experiences, using_cuda=False):
             a = torch.Tensor(a).cuda() #TODO see if this line slows down the program
             r = torch.Tensor(r).cuda()
             ns = torch.Tensor(ns).cuda()
-
+        else:
+            s = torch.Tensor(s)
+            a = torch.Tensor(a)
+            r = torch.Tensor(r)
+            ns = torch.Tensor(ns)
+            
         states.append(s)
         actions.append(a)
         rewards.append(r)
