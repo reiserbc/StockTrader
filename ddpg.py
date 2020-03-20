@@ -64,13 +64,8 @@ class AgentDDPG:
 
     def update(self, batch_size: int):
         samples = self.replay_buffer.get_samples(batch_size)
-        states, actions, rewards, next_states = unpack_replay_buffer(samples)
-	
-        if self.use_cuda:
-            states = states.cuda()
-            actions = actions.cuda()
-            rewards = rewards.cuda()
-            next_states = next_states.cuda()
+        states, actions, rewards, next_states = unpack_replay_buffer(samples, self.use_cuda)
+
         # Critic loss        
         Qvals = self.critic.forward(states, actions)
         next_actions = self.actor_target.forward(next_states)
@@ -141,7 +136,7 @@ def unpack_replay_buffer(experiences, using_cuda=False):
             a = torch.Tensor(a)
             r = torch.Tensor(r)
             ns = torch.Tensor(ns)
-            
+
         states.append(s)
         actions.append(a)
         rewards.append(r)
