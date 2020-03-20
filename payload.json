@@ -20,7 +20,7 @@
       {
         "name": "nvidia/gpu",
         "memory": "16GB",
-        "count": 3
+        "count": 1
       }
     ]
   }

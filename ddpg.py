@@ -25,6 +25,12 @@ class AgentDDPG:
         copy_params(self.actor, self.actor_target)
         copy_params(self.critic, self.critic_target)
 
+        if self.use_cuda:
+            self.actor.cuda()
+            self.actor_target.cuda()
+            self.critic.cuda()
+            self.critic_target.cuda()
+
         # Create replay buffer for storing experience
         self.replay_buffer = ReplayBuffer(cache_size=int(1e6))
 
@@ -38,6 +44,7 @@ class AgentDDPG:
             self.actor_target.cuda()
             self.critic.cuda()
             self.critic_target.cuda()
+
 
     def set_noise_process(self, noise_process):
         self.noise_process = noise_process

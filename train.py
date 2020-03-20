@@ -21,8 +21,8 @@ batch_size = 64
 rewards = []
 avg_rewards = []
 
-for episode in range(500):
-    state = env.reset().cuda()
+for episode in range(1000):
+    state = env.reset()
     # reset noice_process episodically
     agent.noise_process.reset_states()
     
