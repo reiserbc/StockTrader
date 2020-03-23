@@ -19,7 +19,7 @@ def main():
 
     trainer = ReinforcementTrainer(env, agent)
     weight_noise = lambda a: a.add_noise_to_weights(0.1)
-    trainer.train(episodes=200, timesteps=500, batch_size=1024, mut_alg_episode=weight_noise,
+    trainer.train(episodes=200, timesteps=500, batch_size=int(1e5), mut_alg_episode=weight_noise,
         log=True, render_env=False, save_path='pendulum_ddpg.pkl')
         
 def simulate(model_file):
@@ -66,9 +66,6 @@ class ReinforcementTrainer:
                 new_state, reward, done, info = self.gym.step(action.cpu())
                 self.agent.save_experience(state, action, float_reward(reward), new_state)
 
-                if len(self.agent.replay_buffer) > batch_size:
-                    self.agent.update(batch_size) 
-        
                 state = new_state
                 episode_reward += reward
 		
@@ -89,6 +86,10 @@ class ReinforcementTrainer:
                 plt.ylabel('Reward')
                 plt.draw()
                 plt.pause(0.1)
+            
+            # Perform update
+            if len(self.agent.replay_buffer) > batch_size:
+                self.agent.update(batch_size) 
 
         if save_path:
             torch.save(self.agent, save_path)
