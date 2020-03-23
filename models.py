@@ -6,36 +6,35 @@ from torch.autograd import Variable
 
 class Actor(nn.Module):
     "Actor model for Actor-Critic neural nets"
-    def __init__(self, state_size, action_size):
+    def __init__(self, input_size, hidden_size, output_size):
         super(Actor, self).__init__()
-        self.state_size = state_size
-        self.action_size = action_size
-        self.linear1 = nn.Linear(state_size, 32)
-        self.linear2 = nn.Linear(32, 32)
-        self.linear3 = nn.Linear(32, action_size)
+        self.state_size = input_size
+        self.action_size = output_size
+        self.linear1 = nn.Linear(input_size, hidden_size)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, output_size)
     
     def forward(self, state):
         """Compute Forward pass"""
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
         x = self.linear3(x)
-        return torch.tanh(x) * 2
+        return torch.tanh(x)
 
 class Critic(nn.Module):
     """ Critic network for Actor-Critic neural nets"""
-    def __init__(self, state_size, action_size):
+    def __init__(self, input_size, hidden_size, output_size):
         super(Critic, self).__init__()
-        self.state_size = state_size
-        self.action_size = action_size
-        self.linear1 = nn.Linear(self.state_size, 32)
-        self.linear2 = nn.Linear(32 + action_size, 32)
-        self.linear3 = nn.Linear(32, 1)
+        self.state_size = input_size
+        self.action_size = output_size
+        self.linear1 = nn.Linear(self.state_size, hidden_size)
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.linear3 = nn.Linear(hidden_size, 1)
 
     def forward(self, state, action):
         """Compute forward pass"""
-        x = F.relu(self.linear1(state))
-        # concatenate action with x on the second layer
-        x = torch.cat((x, action), dim=1)
+        x = torch.cat([state, action], dim=1)
+        x = F.relu(self.linear1(x))
         x = F.relu(self.linear2(x))
         x = self.linear3(x)
         return x

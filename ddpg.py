@@ -3,26 +3,27 @@ from collections import deque
 import torch
 import typing
 from torch import nn, optim, FloatTensor
+from torch.autograd import Variable
 import numpy as np
 from models import Actor, Critic
-from helpers import copy_params
-from noise import OrnsteinUhlenbeckProcess
+from helpers import copy_params, soft_copy_params
 
 class AgentDDPG:
     """Deep Deterministic Policy Gradient implementation for continuous action space reinforcement learning tasks"""
-    def __init__(self, state_size: int, action_size: int, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2, use_cuda=False):
+    def __init__(self, state_size, hidden_size, action_size, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2, use_cuda=False):
         # Params
-        self.state_size, self.action_size = state_size, action_size
+        self.state_size, self.hidden_size, self.action_size = state_size, hidden_size, action_size
         self.gamma, self.tau = gamma, tau
         self.use_cuda = use_cuda
 
         # Networks
-        self.actor = Actor(state_size, action_size)
-        self.critic = Critic(state_size, action_size)
+        self.actor = Actor(state_size, hidden_size, action_size)
+        self.actor_target = Actor(state_size, hidden_size, action_size)
 
-        # Create target networks for training actor-critic nets properly 
-        self.actor_target = Actor(state_size, action_size)
-        self.critic_target = Critic(state_size, action_size)
+        self.critic = Critic(state_size + action_size , hidden_size, action_size)
+        self.critic_target = Critic(state_size + action_size, hidden_size, action_size)
+        
+        # Hard copy params from original networks to target networks
         copy_params(self.actor, self.actor_target)
         copy_params(self.critic, self.critic_target)
 
@@ -40,33 +41,27 @@ class AgentDDPG:
         self.actor_optimizer  = optim.Adam(self.actor.parameters(), lr=actor_learning_rate)
         self.critic_optimizer = optim.Adam(self.critic.parameters(), lr=critic_learning_rate)
 
-    def set_noise_process(self, noise_process):
-        self.noise_process = noise_process
-
-    def get_action(self, state: np.ndarray, noise=True):
+    def get_action(self, state):
         """Select action with respect to state according to current policy and exploration noise"""
-        state = FloatTensor(state)
+        state = Variable(torch.from_numpy(state).float().unsqueeze(0))
+
         if self.use_cuda:
             state = state.cuda()
-        a = self.actor.forward(state).detach()
-        if noise:
-            try:
-                n = FloatTensor(self.noise_process.sample())
-                if self.use_cuda:
-                    n = n.cuda()
-                return a + n
-            except NameError as e:
-                print("Please set a noice process with self.set_noise_process(noise_process)")
+
+        a = self.actor.forward(state)
+        a = a.detach().numpy()[0, 0]
         return a
 
-    def save_experience(self, state_t: np.ndarray, action_t: any, reward_t: float, state_t1: np.ndarray):
+    def save_experience(self, state_t, action_t, reward_t, state_t1):
         self.replay_buffer.add_sample(state_t, action_t, reward_t, state_t1)
 
-    def update(self, batch_size: int):
-        samples = self.replay_buffer.get_samples(batch_size)
-        
-        states, actions, rewards, next_states = unpack_replay_buffer(samples, self.use_cuda)
-        
+    def update(self, batch_size):
+        states, actions, rewards, next_states = self.replay_buffer.get_samples(batch_size)
+        states = torch.FloatTensor(states)
+        actions = torch.FloatTensor(actions)
+        rewards = torch.FloatTensor(rewards)
+        next_states = torch.FloatTensor(next_states)
+
         # Critic loss        
         Qvals = self.critic.forward(states, actions)
         next_actions = self.actor_target.forward(next_states)
@@ -74,24 +69,22 @@ class AgentDDPG:
         Qprime = rewards + self.gamma * next_Q
         critic_loss = self.critic_criterion(Qvals, Qprime)
 
-        # Actor loss
-        policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean()
-        
-        # update networks
-        self.actor_optimizer.zero_grad()
-        policy_loss.backward()
-        self.actor_optimizer.step()
-
+        # Update critic
         self.critic_optimizer.zero_grad()
         critic_loss.backward() 
         self.critic_optimizer.step()
 
+        # Actor loss
+        policy_loss = -self.critic.forward(states, self.actor.forward(states)).mean()
+        
+        # Update actor
+        self.actor_optimizer.zero_grad()
+        policy_loss.backward()
+        self.actor_optimizer.step()
+        
         # update target networks 
-        for target_param, param in zip(self.actor_target.parameters(), self.actor.parameters()):
-            target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
-       
-        for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
-            target_param.data.copy_(param.data * self.tau + target_param.data * (1.0 - self.tau))
+        soft_copy_params(self.actor, self.actor_target, self.tau)
+        soft_copy_params(self.critic, self.critic_target, self.tau)
     
     def add_noise_to_weights(self, amount=0.1):
         self.actor.apply(lambda x: _add_noise_to_weights(x, amount, self.use_cuda))
@@ -110,41 +103,29 @@ class ReplayBuffer:
     
     def add_sample(self, state_t, action_t, reward_t, state_t1):
         """Store a sample tuple <state_t, action_t, reward_t, state_t1> into finite cache memory"""
-        x = (state_t, action_t, reward_t, state_t1)
+        x = (state_t, action_t, np.array([reward_t]), state_t1)
         self.buffer.append(x)
     
     def get_samples(self, batch_size):
-        """Return list of tuples of <state_t, action_t, reward_t, state_t1>"""
-        return random.sample(self.buffer, batch_size)
+        """Return lists of state_batch, action_batch, reward_batch, next_state_batch"""
+        state_batch = []
+        action_batch = []
+        reward_batch = []
+        next_state_batch = []
+
+        batch = random.sample(self.buffer, batch_size)
+
+        for experience in batch:
+            state, action, reward, next_state = experience
+            state_batch.append(state)
+            action_batch.append(action)
+            reward_batch.append(reward)
+            next_state_batch.append(next_state)
+        
+        return state_batch, action_batch, reward_batch, next_state_batch
         
     def __len__(self):
         return len(self.buffer)
-
-def unpack_replay_buffer(experiences, using_cuda=False):
-    # Unpack list of tuple experiences into Tensors with 
-    # dimensions (len(experiences), x), where x varies in states, actions, etc.
-    batch_size = len(experiences)
-    states, actions, rewards, new_states = [], [], [], []
-    for s, a, r, ns in experiences:
-        if using_cuda:
-            s = torch.Tensor(s).cuda()
-#           a = torch.Tensor(a).cuda() #TODO see if this line slows down the program
-            r = torch.Tensor([r]).cuda()
-            ns = torch.Tensor(ns).cuda()
-        else:
-            s = torch.Tensor(s)
-#           a = torch.Tensor(a)
-            r = torch.Tensor([r])
-            ns = torch.Tensor(ns)
-
-        states.append(s)
-        actions.append(a)
-        rewards.append(r)
-        new_states.append(ns)
-
-    # stack list of tensors into one big tensors with <batch_size, x> dimensions
-    s_t, a_t, r_t, ns_t = torch.stack(states), torch.stack(actions), torch.stack(rewards), torch.stack(new_states)
-    return s_t, a_t, r_t, ns_t
 
 def _add_noise_to_weights(m, amount=0.1, use_cuda=False):
     """call model.apply(add_noise_to_weights) to apply noise to a models weights """

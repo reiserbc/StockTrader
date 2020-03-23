@@ -3,44 +3,37 @@ import gym
 import numpy as np
 from matplotlib import pyplot as plt
 from ddpg import AgentDDPG
-from noise import OrnsteinUhlenbeckProcess
+from noise import OUNoise
+from helpers import print_gym_info
 
 def main():
     # Initialize OpenAI Gym environment
-    env = gym.make('Pendulum-v0')
+    env = NormalizedEnv(gym.make('Pendulum-v0'))
 
-    print("Env action space: {}. Env observation space: {}".format(env.action_space, env.observation_space))
-    print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
-    print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
+    print_gym_info(env)
+
     # Initialize networks
-    agent = AgentDDPG(3, 1, use_cuda=True)
-    noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
-    agent.set_noise_process(noise_process)
+    agent = AgentDDPG(state_size=3, hidden_size=32, action_size=1, use_cuda=False)
+    noise = OUNoise(env.action_space)
 
-    trainer = ReinforcementTrainer(env, agent)
-    weight_noise = lambda a: a.add_noise_to_weights(0.1)
-    trainer.train(episodes=200, timesteps=500, batch_size=1024, mut_alg_episode=weight_noise,
-        log=True, render_env=False, save_path='pendulum_ddpg.pkl')
+    trainer = ReinforcementTrainer(env, agent, noise)
+
+    trainer.train(episodes=200, timesteps=500, batch_size=128, plot=True, render_env=True, save_path='pendulum_ddpg.pkl')
         
 def simulate(model_file):
-    env = gym.make('BipedalWalker-v3')
-    agent = AgentDDPG(24, 4, use_cuda=False)
-    noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
-    agent.set_noise_process(noise_process)
-    trainer = ReinforcementTrainer(env, agent)
-    trainer.simulate(5, 250, model_file, render_env=True)
-
-def float_reward(reward) -> float:
-    # try to put reward into a float
-    if type(reward) == torch.Tensor:
-        return float(reward.item())
-    elif type(reward) != float:
-        return float(reward)
+    # env = gym.make('BipedalWalker-v3')
+    # agent = AgentDDPG(24, 4, use_cuda=False)
+    # noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
+    # agent.set_noise_process(noise_process)
+    # trainer = ReinforcementTrainer(env, agent)
+    # trainer.simulate(5, 250, model_file, render_env=True)
+    pass
 
 class ReinforcementTrainer:
-    def __init__(self, gym, agent):
+    def __init__(self, gym, agent, noise):
         self.gym = gym
         self.agent = agent
+        self.noise = noise
 
     def train(self, episodes, timesteps, batch_size, save_path=None, mut_alg_episode=None, 
                                         mut_alg_step=None, render_env=False, plot=False, log=False):
@@ -55,16 +48,17 @@ class ReinforcementTrainer:
     
         for e in range(episodes):
             state = self.gym.reset()
-            self.agent.noise_process.reset()
+            self.noise.reset()
             episode_reward = 0
 
             for t in range(timesteps):
                 if render_env:
                     self.gym.render()
 
-                action = self.agent.get_action(state, noise=True)
-                new_state, reward, done, info = self.gym.step(action.cpu())
-                self.agent.save_experience(state, action, float_reward(reward), new_state)
+                action = self.agent.get_action(state)
+                action = self.noise.get_action(action, t)
+                new_state, reward, done, info = self.gym.step(action)
+                self.agent.save_experience(state, action, reward, new_state)
 
                 if len(self.agent.replay_buffer) > batch_size:
                     self.agent.update(batch_size) 
@@ -126,6 +120,22 @@ class ReinforcementTrainer:
             plt.draw()
             plt.pause(0.1)
 
+# https://github.com/openai/gym/blob/master/gym/core.py
+class NormalizedEnv(gym.ActionWrapper):
+    """ Wrap action """
+    def action(self, action):
+        act_k = (self.action_space.high - self.action_space.low)/ 2.
+        act_b = (self.action_space.high + self.action_space.low)/ 2.
+        return act_k * action + act_b
+
+    def reverse_action(self, action):
+        act_k_inv = 2./(self.action_space.high - self.action_space.low)
+        act_b = (self.action_space.high + self.action_space.low)/ 2.
+        return act_k_inv * (action - act_b)
+        
+
 if __name__ == '__main__':
     main() 
 #    simulate('ddpg.pkl')       
+
+

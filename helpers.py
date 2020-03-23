@@ -8,6 +8,10 @@ def copy_params(from_net, to_net):
     for target_param, param in zip(to_net.parameters(), from_net.parameters()):
         target_param.data.copy_(param.data)
 
+def soft_copy_params(from_net, to_net, tau):
+    for target_param, param in zip(to_net.parameters(), from_net.parameters()):
+            target_param.data.copy_(param.data * tau + target_param.data * (1.0 - tau))
+
 def normalize_ochlv(df, max_price, max_vol):
     # Return a 0-1 normalized df
     df = df.copy()
@@ -32,3 +36,9 @@ def match_shape(of, to):
         column_name = to.columns[len(of.columns)-1]
         of[column_name] = fill_val
     return of
+
+def print_gym_info(env):
+    print("Env action space: {}. Env observation space: {}".format(env.action_space, env.observation_space))
+    print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
+    print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
+    
