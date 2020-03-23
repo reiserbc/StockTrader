@@ -13,14 +13,14 @@ def main():
     print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
     print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
     # Initialize networks
-    agent = AgentDDPG(3, 1, use_cuda=False)
+    agent = AgentDDPG(3, 1, use_cuda=True)
     noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
     agent.set_noise_process(noise_process)
 
     trainer = ReinforcementTrainer(env, agent)
-    weight_noise = lambda a: a.add_noise_to_weights(0.3)
-    trainer.train(episodes=200, timesteps=500, batch_size=256, mut_alg_episode=weight_noise,
-        plot=True, render_env=False, save_path='pendulum_ddpg.pkl')
+    weight_noise = lambda a: a.add_noise_to_weights(0.1)
+    trainer.train(episodes=200, timesteps=500, batch_size=1024, mut_alg_episode=weight_noise,
+        log=True, render_env=False, save_path='pendulum_ddpg.pkl')
         
 def simulate(model_file):
     env = gym.make('BipedalWalker-v3')
@@ -91,7 +91,7 @@ class ReinforcementTrainer:
                 plt.pause(0.1)
 
         if save_path:
-            torch.save(self.agent, 'ddpg.pkl')
+            torch.save(self.agent, save_path)
 
     def simulate(self, episodes, timesteps, load_path=None, render_env=False, plot=False, log=False):
         agent = torch.load(load_path) if load_path else self.agent

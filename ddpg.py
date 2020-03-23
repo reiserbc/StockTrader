@@ -64,8 +64,9 @@ class AgentDDPG:
 
     def update(self, batch_size: int):
         samples = self.replay_buffer.get_samples(batch_size)
+        
         states, actions, rewards, next_states = unpack_replay_buffer(samples, self.use_cuda)
-
+        
         # Critic loss        
         Qvals = self.critic.forward(states, actions)
         next_actions = self.actor_target.forward(next_states)
@@ -123,17 +124,16 @@ def unpack_replay_buffer(experiences, using_cuda=False):
     # Unpack list of tuple experiences into Tensors with 
     # dimensions (len(experiences), x), where x varies in states, actions, etc.
     batch_size = len(experiences)
-
     states, actions, rewards, new_states = [], [], [], []
     for s, a, r, ns in experiences:
         if using_cuda:
             s = torch.Tensor(s).cuda()
-            a = torch.Tensor(a).cuda() #TODO see if this line slows down the program
+#           a = torch.Tensor(a).cuda() #TODO see if this line slows down the program
             r = torch.Tensor([r]).cuda()
             ns = torch.Tensor(ns).cuda()
         else:
             s = torch.Tensor(s)
-            a = torch.Tensor(a)
+#           a = torch.Tensor(a)
             r = torch.Tensor([r])
             ns = torch.Tensor(ns)
 
