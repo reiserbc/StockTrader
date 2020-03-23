@@ -7,21 +7,21 @@ from noise import OrnsteinUhlenbeckProcess
 
 def main():
     # Initialize OpenAI Gym environment
-    env = gym.make('BipedalWalker-v3')
+    env = gym.make('Pendulum-v0')
 
     print("Env action space: {}. Env observation space: {}".format(env.action_space, env.observation_space))
     print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
     print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
     # Initialize networks
-    agent = AgentDDPG(24, 4, use_cuda=False)
+    agent = AgentDDPG(3, 1, use_cuda=False)
     noise_process = OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.5)
     agent.set_noise_process(noise_process)
 
     trainer = ReinforcementTrainer(env, agent)
-    f1 = lambda a: a.add_noise_to_weights(0.3)
-    f2 = lambda a: a.add_noise_to_weights(0.1)
-    trainer.train(episodes=200, timesteps=100, batch_size=64, mut_alg_episode=f1, mut_alg_step=f2)
-
+    weight_noise = lambda a: a.add_noise_to_weights(0.3)
+    trainer.train(episodes=200, timesteps=500, batch_size=256, mut_alg_episode=weight_noise,
+        plot=True, render_env=False, save_path='pendulum_ddpg.pkl')
+        
 def simulate(model_file):
     env = gym.make('BipedalWalker-v3')
     agent = AgentDDPG(24, 4, use_cuda=False)
@@ -83,12 +83,12 @@ class ReinforcementTrainer:
             if log:
                 print("Episode {} | Reward {}".format(e, episode_reward))
 
-        if plot:
-            plt.plot(rewards)
-            plt.xlabel('Episode')
-            plt.ylabel('Reward')
-            plt.draw()
-            plt.pause(0.1)
+            if plot:
+                plt.plot(rewards)
+                plt.xlabel('Episode')
+                plt.ylabel('Reward')
+                plt.draw()
+                plt.pause(0.1)
 
         if save_path:
             torch.save(self.agent, 'ddpg.pkl')
