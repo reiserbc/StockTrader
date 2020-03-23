@@ -49,8 +49,12 @@ class AgentDDPG:
             state = state.cuda()
 
         a = self.actor.forward(state)
-        a = a.detach().numpy()[0, 0]
-        return a
+
+        if self.use_cuda:
+            return a.detach().cpu().numpy()[0, 0]
+
+        return a.detach().numpy()[0, 0]
+
 
     def save_experience(self, state_t, action_t, reward_t, state_t1):
         self.replay_buffer.add_sample(state_t, action_t, reward_t, state_t1)
