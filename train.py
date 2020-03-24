@@ -8,17 +8,17 @@ from helpers import print_gym_info
 
 def main():
     # Initialize OpenAI Gym environment
-    env = NormalizedEnv(gym.make('Pendulum-v0'))
+    env = NormalizedEnv(gym.make('BipedalWalker-v3'))
 
     print_gym_info(env)
 
     # Initialize networks
-    agent = AgentDDPG(state_size=3, hidden_size=32, action_size=1, use_cuda=False)
+    agent = AgentDDPG(state_size=24, hidden_size=64, action_size=4, use_cuda=True)
     noise = OUNoise(env.action_space)
 
     trainer = ReinforcementTrainer(env, agent, noise)
 
-    trainer.train(episodes=200, timesteps=500, batch_size=128, plot=True, render_env=True, save_path='pendulum_ddpg.pkl')
+    trainer.train(episodes=5000, timesteps=300, batch_size=256, log=True, save_path='pendulum_ddpg.pkl')
         
 def simulate(model_file):
     # env = gym.make('BipedalWalker-v3')
@@ -84,8 +84,8 @@ class ReinforcementTrainer:
                 plt.draw()
                 plt.pause(0.1)
 
-        if save_path:
-            torch.save(self.agent, save_path)
+            if save_path and (e % 20 == 0 or e == episodes):
+                torch.save(self.agent, save_path)
 
     def simulate(self, episodes, timesteps, load_path=None, render_env=False, plot=False, log=False):
         agent = torch.load(load_path) if load_path else self.agent

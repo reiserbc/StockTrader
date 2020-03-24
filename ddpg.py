@@ -34,7 +34,7 @@ class AgentDDPG:
             self.critic_target.cuda()
 
         # Create replay buffer for storing experience
-        self.replay_buffer = ReplayBuffer(cache_size=int(1e6))
+        self.replay_buffer = ReplayBuffer(cache_size=int(1e5))
 
         # Training
         self.critic_criterion  = nn.MSELoss()
