@@ -67,8 +67,8 @@ class AgentDDPG:
         next_states = torch.FloatTensor(next_states)
 
         if self.use_cuda:
-            states.cuda()
-            next_states.cuda()
+            states = states.cuda()
+            next_states = next_states.cuda()
 
         # Critic loss        
         Qvals = self.critic.forward(states, actions)
