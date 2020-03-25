@@ -10,7 +10,7 @@ from helpers import copy_params, soft_copy_params
 
 class AgentDDPG:
     """Deep Deterministic Policy Gradient implementation for continuous action space reinforcement learning tasks"""
-    def __init__(self, state_size, hidden_size, action_size, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2, use_cuda=False):
+    def __init__(self, state_size, hidden_size, action_size, actor_learning_rate=1e-3, critic_learning_rate=1e-2, gamma=0.99, tau=1e-2, use_cuda=False):
         # Params
         self.state_size, self.hidden_size, self.action_size = state_size, hidden_size, action_size
         self.gamma, self.tau = gamma, tau
@@ -34,7 +34,7 @@ class AgentDDPG:
             self.critic_target.cuda()
 
         # Create replay buffer for storing experience
-        self.replay_buffer = ReplayBuffer(cache_size=int(1e5))
+        self.replay_buffer = ReplayBuffer(cache_size=int(1e6))
 
         # Training
         self.critic_criterion  = nn.MSELoss()
@@ -43,7 +43,7 @@ class AgentDDPG:
 
     def get_action(self, state):
         """Select action with respect to state according to current policy and exploration noise"""
-        state = Variable(torch.from_numpy(state).float().unsqueeze(0))
+        state = Variable(torch.from_numpy(state).float())
 
         if self.use_cuda:
             state = state.cuda()
@@ -51,9 +51,9 @@ class AgentDDPG:
         a = self.actor.forward(state)
 
         if self.use_cuda:
-            return a.detach().cpu().numpy()[0, 0]
+            return a.detach().cpu().numpy()
 
-        return a.detach().numpy()[0, 0]
+        return a.detach().numpy()
 
 
     def save_experience(self, state_t, action_t, reward_t, state_t1):
