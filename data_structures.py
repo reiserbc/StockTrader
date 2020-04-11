@@ -29,7 +29,7 @@ class Portfolio:
         """ Buy num_shares of shares at share_price each """
         assert num_shares * share_price <= self.balance
 
-        prev_cost = self.portfolio.get_owned_share_value()
+        prev_cost = self.get_owned_share_value()
         additional_cost = num_shares * share_price
 
         self.balance -= additional_cost

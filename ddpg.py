@@ -10,7 +10,7 @@ from helpers import copy_params, soft_copy_params
 
 class AgentDDPG:
     """Deep Deterministic Policy Gradient implementation for continuous action space reinforcement learning tasks"""
-    def __init__(self, state_size, hidden_size, action_size, actor_learning_rate=1e-3, critic_learning_rate=1e-2, gamma=0.99, tau=1e-2, use_cuda=False):
+    def __init__(self, state_size, hidden_size, action_size, actor_learning_rate=1e-4, critic_learning_rate=1e-3, gamma=0.99, tau=1e-2, use_cuda=False):
         # Params
         self.state_size, self.hidden_size, self.action_size = state_size, hidden_size, action_size
         self.gamma, self.tau = gamma, tau
