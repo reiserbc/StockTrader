@@ -30,7 +30,7 @@ class StockTraderEnv(gym.Env):
         self._max_vol = stock_df['volume'].max()
         
         # Actions of format Buy x%, Sell x%, Hold x% (NOTE: Hold % is irrelevant)
-        self.action_space = spaces.Box(low=np.array([0, 0]), high=np.array([2,1], dtype=np.float32))
+        self.action_space = spaces.Box(low=np.array([0, 0]), high=np.array([3,1], dtype=np.float32))
         # Observations of normalized OCHLV values for the last self._lookback_period periods
         # shape is self._lookback_period, 6 because dim(OCHLV) = 5 and dim(portfolio) = 1
         self.observation_space = spaces.Box(low=0, high=1, shape=(self._lookback_period*6,), dtype=np.float32)
@@ -94,8 +94,6 @@ class StockTraderEnv(gym.Env):
 
         action_type, amount = action
 
-        print(action_type)
-
         if int(action_type) == 0:
             # Buy Action
             # buy % of balance worth of shares
@@ -141,7 +139,8 @@ class StockTraderEnv(gym.Env):
 
         # Reward maintaining a large balance for a long time
         delay_modifier = self.state["curr_step"] / self._max_steps
-        return self.portfolio.get_balance() * delay_modifier
+        reward = self.portfolio.get_balance() * delay_modifier
+        return reward
 
     def _is_done(self) -> bool:
         """ Returns True when net_worth <= 0 """

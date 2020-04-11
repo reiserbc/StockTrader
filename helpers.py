@@ -25,8 +25,9 @@ def normalize_ochlv(df, max_price, max_vol):
 def format_ochlv_df(df):
     # only works for colums
     assert '1. open' in df.columns
-    return df.rename(columns={"1. open": "open", "2. high": "high", "3. low": "low", "4. close": "close", "5. volume": "volume"})
-
+    df = df.rename(columns={"1. open": "open", "2. high": "high", "3. low": "low", "4. close": "close", "5. volume": "volume"})
+    return df
+    
 def match_shape(of, to):
     """Adds columns of 0 into of DataFrame s.t. len(of.columns) == len(to.columns)
     len(of.columns) must be <= len(to.columns)
@@ -39,6 +40,3 @@ def match_shape(of, to):
 
 def print_gym_info(env):
     print("Env action space: {}. Env observation space: {}".format(env.action_space, env.observation_space))
-    print("act_space high: {}, low: {}".format(env.action_space.high, env.action_space.low))
-    print("obs_space high: {}, low: {}".format(env.observation_space.high, env.observation_space.low))
-    

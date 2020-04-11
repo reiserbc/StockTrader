@@ -37,8 +37,6 @@ class ReinforcementTrainer:
                 action = self.noise.get_action(action, t)
                 new_state, reward, done, info = self.gym.step(action)
                 
-                if t % 10 == 0:
-                    print(action)
                 if done:
                     break
 
@@ -120,17 +118,16 @@ class NormalizedEnv(gym.ActionWrapper):
 def main():
     stock_df = AlphaVantage('PYXRW3T85X6XF44V').get_intraday('goog', '1min')
     stock_df = format_ochlv_df(stock_df)
+    print(stock_df.head())
     # Initialize OpenAI Gym environment
-    env = NormalizedEnv(StockTraderEnv(stock_df, max_steps=1000, lookback_period=5, init_balance=1000))
-
-    print_gym_info(env)
+    env = StockTraderEnv(stock_df, max_steps=1000, lookback_period=5, init_balance=100000)
 
     # Initialize networks
     agent = AgentDDPG(state_size=30, hidden_size=256, action_size=2, use_cuda=False)
     noise = OUNoise(env.action_space)
 
     trainer = ReinforcementTrainer(env, agent, noise)
-    trainer.train(episodes=1000, timesteps=1000, batch_size=128, plot=True, log=True, render_env=False, save_path='stock_ddpg.pkl')
+    trainer.train(episodes=1000, timesteps=1000, batch_size=128, plot=True, log=True, render_env=True, save_path='stock_ddpg.pkl')
 
 if __name__ == '__main__':
     main()     

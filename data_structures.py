@@ -33,7 +33,10 @@ class Portfolio:
         additional_cost = num_shares * share_price
 
         self.balance -= additional_cost
-        self.cost_basis = (prev_cost + additional_cost) / (self.shares_owned + num_shares)
+        if (self.shares_owned + num_shares) == 0:
+            self.cost_basis = 0
+        else:
+            self.cost_basis = (prev_cost + additional_cost) / (self.shares_owned + num_shares)
         self.shares_owned += num_shares
 
     def sell(self, num_shares, share_price):

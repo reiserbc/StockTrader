@@ -19,7 +19,7 @@ class Actor(nn.Module):
         x = F.relu(self.linear1(state))
         x = F.relu(self.linear2(x))
         x = self.linear3(x)
-        return torch.tanh(x)
+        return torch.relu(x)
 
 class Critic(nn.Module):
     """ Critic network for Actor-Critic neural nets"""
