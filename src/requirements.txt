@@ -1,0 +1,10 @@
+torch
+matplotlib
+gym
+numpy
+pandas
+alpha_vantage
+yfinance
+sanic
+tqdm
+pickle
